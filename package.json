@@ -1,0 +1,24 @@
+{
+  "name": "ollama-manager",
+  "version": "1.0.0",
+  "description": "One-click Ollama installer with Web management interface",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "install": "node install.ps1"
+  },
+  "keywords": ["ollama", "ai", "llm", "installer", "manager"],
+  "author": "Sapiens AI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agnes-ai/ollama-manager.git"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

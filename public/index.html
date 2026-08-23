@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama 模型管理器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* 头部 */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--surface-light);
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 主布局 */
+        .main {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: calc(100vh - 73px);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-light);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+        }
+
+        /* 内容区 */
+        .content {
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* 输入框 */
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        /* 模型列表 */
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .model-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .model-item:hover {
+            border-color: var(--primary);
+        }
+
+        .model-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .model-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .model-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .model-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 0.25rem 0.75rem;
+            background: var(--surface-light);
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .tag.china {
+            background: #059669;
+        }
+
+        .tag.new {
+            background: var(--primary);
+        }
+
+        .tag.code {
+            background: #7c3aed;
+        }
+
+        /* 进度条 */
+        .progress-container {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--surface-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #8b5cf6);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* 日志 */
+        .log-container {
+            background: #000;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .log-container.active {
+            display: block;
+        }
+
+        .log-line {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .log-line:last-child {
+            border-bottom: none;
+        }
+
+        /* 推荐模型网格 */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .model-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .model-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .model-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .model-card-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .model-card-size {
+            background: var(--surface-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+        }
+
+        .model-card-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+
+        .model-card-info {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* 安装向导 */
+        .install-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .step {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            margin-bottom: 0.25rem;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* 隐藏元素 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部 -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🦙</div>
+            <span>Ollama 管理器</span>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">连接中...</span>
+        </div>
+    </header>
+
+    <!-- 主布局 -->
+    <div class="main">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">功能</div>
+                <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span>仪表板</span>
+                </div>
+                <div class="nav-item" data-page="models" onclick="switchPage('models')">
+                    <span class="nav-icon">🤖</span>
+                    <span>我的模型</span>
+                </div>
+                <div class="nav-item" data-page="explore" onclick="switchPage('explore')">
+                    <span class="nav-icon">🔍</span>
+                    <span>浏览模型</span>
+                </div>
+                <div class="nav-item" data-page="install" onclick="switchPage('install')">
+                    <span class="nav-icon">⬇️</span>
+                    <span>安装 Ollama</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">系统信息</div>
+                <div id="systemInfo" style="font-size: 0.875rem; color: var(--text-muted);">
+                    加载中...
+                </div>
+            </div>
+        </aside>
+
+        <!-- 内容区 -->
+        <main class="content">
+            <!-- 仪表板页面 -->
+            <div id="page-dashboard" class="page">
+                <h1 class="page-title">仪表板</h1>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statModels">0</div>
+                        <div class="stat-label">已安装模型</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statSize">0 GB</div>
+                        <div class="stat-label">总占用空间</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRam">-</div>
+                        <div class="stat-label">系统内存</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statChina">-</div>
+                        <div class="stat-label">网络环境</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">快速开始</h2>
+                    </div>
+                    <div class="install-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>安装 Ollama</h4>
+                                <p>点击下方按钮下载并安装 Ollama（约 150MB）</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>选择模型</h4>
+                                <p>在"浏览模型"中查看适合您硬件的模型</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>开始使用</h4>
+                                <p>安装完成后即可通过 Web 界面或命令行使用</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn btn-primary" onclick="switchPage('install')">
+                            ⬇️ 安装 Ollama
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的模型页面 -->
+            <div id="page-models" class="page hidden">
+                <h1 class="page-title">我的模型</h1>
+                
+                <div class="input-group">
+                    <input type="text" class="input" id="pullInput" placeholder="输入模型名称，如 llama3.2:3b">
+                    <button class="btn btn-primary" onclick="pullModel()">
+                        ⬇️ 下载
+                    </button>
+                </div>
+
+                <div id="pullProgress" class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progressPercent">0%</span>
+                        <span id="progressSpeed">0 MB/s</span>
+                        <span id="progressSize">0 / 0 MB</span>
+                    </div>
+                </div>
+
+                <div class="log-container" id="pullLog"></div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h2 class="card-title">已安装模型</h2>
+                        <button class="btn btn-secondary" onclick="loadModels()">🔄 刷新</button>
+                    </div>
+                    <div id="installedModels" class="model-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📦</div>
+                            <p>暂无已安装模型</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 浏览模型页面 -->
+            <div id="page-explore" class="page hidden">
+                <h1 class="page-title">浏览模型</h1>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+                    以下模型根据您系统配置推荐，点击即可下载
+                </p>
+                <div id="recommendedModels" class="models-grid">
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <p>正在加载推荐模型...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 安装页面 -->
+            <div id="page-install" class="page hidden">
+                <h1 class="page-title">安装 Ollama</h1>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">自动安装脚本</h2>
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                        下载 PowerShell 安装脚本，自动完成 Ollama 的安装和配置
+                    </p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="downloadInstaller()">
+                            ⬇️ 下载安装脚本
+                        </button>
+                        <button class="btn btn-secondary" onclick="runInstallScript()">
+                            ▶️ 运行安装
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">安装说明</h2>
+                    </div>
+                    <div class="install-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>下载脚本</h4>
+                                <p>点击下载按钮获取 ollama-manager.ps1 安装脚本</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>运行脚本</h4>
+                                <p>右键脚本 → "使用 PowerShell 运行"，或双击运行</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>等待完成</h4>
+                                <p>脚本会自动下载 Ollama 并启动服务（约 2-5 分钟）</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">镜像加速</h2>
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;" id="mirrorInfo">
+                        检测到国内网络，将使用镜像加速下载
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==================== 全局状态 ====================
+        let systemInfo = null;
+        let chinaUser = false;
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadSystemInfo();
+            await checkConnection();
+            loadRecommendedModels();
+            
+            // 定期刷新连接状态
+            setInterval(checkConnection, 30000);
+        });
+
+        // ==================== 页面导航 ====================
+        function switchPage(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // 显示目标页面
+            document.getElementById(`page-${page}`).classList.remove('hidden');
+            document.querySelector(`[data-page="${page}"]`).classList.add('active');
+            
+            // 页面特定初始化
+            if (page === 'models') {
+                loadModels();
+            } else if (page === 'explore') {
+                loadRecommendedModels();
+            }
+        }
+
+        // ==================== 系统信息 ====================
+        async function loadSystemInfo() {
+            try {
+                const response = await fetch('/api/info');
+                systemInfo = await response.json();
+                chinaUser = systemInfo.china;
+                
+                document.getElementById('systemInfo').innerHTML = `
+                    <div>平台: ${systemInfo.platform}</div>
+                    <div>架构: ${systemInfo.arch}</div>
+                    <div>内存: ${systemInfo.memoryGB} GB</div>
+                    <div>CPU: ${systemInfo.cpus} 核</div>
+                    <div>网络: ${chinaUser ? '🇨🇳 国内' : '🌍 国际'}</div>
+                `;
+                
+                document.getElementById('statRam').textContent = `${systemInfo.memoryGB} GB`;
+                document.getElementById('statChina').textContent = chinaUser ? '国内' : '国际';
+                
+                // 更新镜像信息
+                const mirrorInfo = document.getElementById('mirrorInfo');
+                if (mirrorInfo) {
+                    mirrorInfo.textContent = chinaUser 
+                        ? '✓ 检测到国内网络，将使用镜像加速下载（GitHub Mirror）'
+                        : '使用官方源下载';
+                }
+            } catch (error) {
+                console.error('加载系统信息失败:', error);
+            }
+        }
+
+        // ==================== 连接检查 ====================
+        async function checkConnection() {
+            try {
+                const response = await fetch('/api/test-connection');
+                const data = await response.json();
+                
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                
+                if (data.connected) {
+                    dot.classList.add('connected');
+                    text.textContent = `已连接 (${data.modelCount} 模型)`;
+                    
+                    // 更新仪表板统计
+                    document.getElementById('statModels').textContent = data.modelCount;
+                } else {
+                    dot.classList.remove('connected');
+                    text.textContent = '未连接';
+                }
+            } catch (error) {
+                document.getElementById('statusText').textContent = '连接失败';
+            }
+        }
+
+        // ==================== 模型管理 ====================
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                
+                const container = document.getElementById('installedModels');
+                
+                if (data.models.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📦</div>
+                            <p>暂无已安装模型</p>
+                            <p style="font-size: 0.875rem; margin-top: 0.5rem;">去"浏览模型"下载第一个模型吧！</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = data.models.map(m => `
+                        <div class="model-item">
+                            <div class="model-info">
+                                <div class="model-name">${m.name}</div>
+                                <div class="model-meta">
+                                    <span>${formatSize(m.size)}</span>
+                                    <span>${formatDate(m.modified)}</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-danger" onclick="deleteModel('${m.name}')">
+                                🗑️ 删除
+                            </button>
+                        </div>
+                    `).join('');
+                    
+                    // 更新统计
+                    const totalSize = data.models.reduce((sum, m) => sum + m.size, 0);
+                    document.getElementById('statModels').textContent = data.models.length;
+                    document.getElementById('statSize').textContent = formatSize(totalSize);
+                }
+            } catch (error) {
+                console.error('加载模型失败:', error);
+            }
+        }
+
+        async function deleteModel(name) {
+            if (!confirm(`确定要删除模型 ${name} 吗？`)) return;
+            
+            try {
+                await fetch(`/api/models/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                loadModels();
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+
+        // ==================== 模型下载 ====================
+        async function pullModel() {
+            const model = document.getElementById('pullInput').value.trim();
+            if (!model) {
+                alert('请输入模型名称');
+                return;
+            }
+            
+            const progressContainer = document.getElementById('pullProgress');
+            const logContainer = document.getElementById('pullLog');
+            
+            progressContainer.classList.add('active');
+            logContainer.classList.add('active');
+            
+            // 清空日志
+            logContainer.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/models/pull', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model })
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                handlePullEvent(data);
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                addLog(`❌ 下载失败: ${error.message}`);
+            }
+        }
+
+        function handlePullEvent(data) {
+            switch (data.type) {
+                case 'progress':
+                    updateProgress(data);
+                    break;
+                case 'status':
+                    addLog(`📥 ${data.message}`);
+                    break;
+                case 'log':
+                    addLog(data.message);
+                    break;
+                case 'complete':
+                    addLog(`✅ 模型 ${data.model} 下载完成！`);
+                    document.getElementById('pullProgress').classList.remove('active');
+                    loadModels();
+                    break;
+                case 'error':
+                    addLog(`❌ 下载失败 (代码: ${data.code})`);
+                    break;
+            }
+        }
+
+        function updateProgress(data) {
+            const percent = Math.min(100, Math.round(data.percent));
+            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('progressPercent').textContent = `${percent}%`;
+            document.getElementById('progressSpeed').textContent = `${formatSpeed(data.speed)}`;
+            document.getElementById('progressSize').textContent = 
+                `${formatSize(data.downloaded)} / ${formatSize(data.total)}`;
+        }
+
+        function addLog(message) {
+            const log = document.getElementById('pullLog');
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `<div class="log-line">[${time}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // ==================== 推荐模型 ====================
+        async function loadRecommendedModels() {
+            try {
+                const response = await fetch('/api/recommended');
+                const data = await response.json();
+                
+                const container = document.getElementById('recommendedModels');
+                
+                if (data.models.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <div class="empty-icon">⚠️</div>
+                            <p>您的系统配置可能不支持任何推荐模型</p>
+                            <p style="font-size: 0.875rem; margin-top: 0.5rem;">建议: 至少需要 4GB 内存</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = data.models.map(m => `
+                        <div class="model-card" onclick="quickPull('${m.name}')">
+                            <div class="model-card-header">
+                                <div class="model-card-name">${m.name}</div>
+                                <div class="model-card-size">${m.size}</div>
+                            </div>
+                            <div class="model-card-tags">
+                                ${m.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                            </div>
+                            <div class="model-card-info">
+                                最小内存需求: ${m.minRam} GB
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                chinaUser = data.china;
+            } catch (error) {
+                console.error('加载推荐模型失败:', error);
+            }
+        }
+
+        function quickPull(model) {
+            document.getElementById('pullInput').value = model;
+            switchPage('models');
+            pullModel();
+        }
+
+        // ==================== 安装脚本 ====================
+        function downloadInstaller() {
+            const link = document.createElement('a');
+            link.href = '/ollama-manager.ps1';
+            link.download = 'ollama-manager.ps1';
+            link.click();
+        }
+
+        async function runInstallScript() {
+            alert('请双击运行下载的 ollama-manager.ps1 脚本，或使用 PowerShell 执行:\n\n.\ollama-manager.ps1 -Install -Start');
+        }
+
+        // ==================== 工具函数 ====================
+        function formatSize(bytes) {
+            if (!bytes) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            while (bytes >= 1024 && i < units.length - 1) {
+                bytes /= 1024;
+                i++;
+            }
+            return `${bytes.toFixed(2)} ${units[i]}`;
+        }
+
+        function formatSpeed(bytesPerSec) {
+            return formatSize(bytesPerSec) + '/s';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN');
+        }
+    </script>
+</body>
+</html>
