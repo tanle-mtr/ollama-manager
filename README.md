@@ -81,6 +81,14 @@ ollama-manager/
 
 MIT License
 
+## 赞助支持
+
+如果这个项目对你有帮助，欢迎扫码赞助支持！🙏
+
+![赞助二维码](sponsor.png)
+
+感谢每一位支持者的鼓励！
+
 ## 作者
 
 Sapiens AI - Agnes
