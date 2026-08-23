@@ -91,9 +91,18 @@ app.post('/api/models/pull', async (req, res) => {
         return res.status(400).json({ error: '请提供模型名称' });
     }
 
-    // 国内用户使用镜像
+    // 检测网络环境并配置镜像
     const isChina = await isChinaUser();
-    const env = isChina ? { ...process.env, HTTPS_PROXY: 'http://mirror.ghproxy.com' } : process.env;
+    const proxyUrl = isChina ? 'http://mirror.ghproxy.com' : '';
+    
+    // 构建环境变量，设置代理
+    const env = {
+        ...process.env,
+        HTTPS_PROXY: proxyUrl,
+        HTTP_PROXY: proxyUrl,
+        https_proxy: proxyUrl,
+        http_proxy: proxyUrl
+    };
 
     // 使用流式响应
     res.setHeader('Content-Type', 'text/event-stream');

@@ -112,6 +112,14 @@ if (Test-Path $ollamaPath) {
 Write-Host ""
 Write-Step 4 5 "Starting services..."
 
+# Configure model mirrors for China users
+if ($isChina) {
+    Write-Info "Configuring model download mirrors..."
+    $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
+    $env:HTTP_PROXY = "http://mirror.ghproxy.com"
+    Write-OK "Model mirror enabled (mirror.ghproxy.com)"
+}
+
 # Start Ollama
 $ollamaRunning = Get-Process -Name "ollama" -ErrorAction SilentlyContinue
 if (-not $ollamaRunning) {

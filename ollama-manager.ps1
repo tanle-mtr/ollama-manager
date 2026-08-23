@@ -211,6 +211,7 @@ function Show-Status {
 }
 
 function Show-RecommendedModels {
+    param([bool]$IsChina = $false)
     $memoryGB = [Math]::Round([Environment]::PhysicalMemory / 1GB, 0)
     
     Write-Host ""
@@ -220,6 +221,12 @@ function Show-RecommendedModels {
     Write-Host "  |  Memory: $memoryGB GB RAM" + (" " * (48 - $memoryGB.ToString().Length)) + " |" -ForegroundColor White
     Write-Host "  +--------------------------------------------------+" -ForegroundColor Cyan
     Write-Host ""
+    
+    # 显示镜像状态
+    if ($IsChina) {
+        Write-Color "  Mirror: Enabled (mirror.ghproxy.com)" -ForegroundColor Green
+        Write-Host ""
+    }
     
     $models = @(
         @{ Name = "phi3"; Size = "3.8GB"; Tags = "Light,Fast"; MinRam = 4 },
@@ -253,6 +260,49 @@ function Show-RecommendedModels {
     Write-Host ""
     Write-Color "  Usage: ollama run <model-name>" -ForegroundColor Gray
     Write-Host ""
+}
+
+function Download-Model {
+    param([string]$ModelName, [bool]$IsChina = $false)
+    
+    if (-not $ModelName) {
+        Write-Color "  [x] Please provide model name" -ForegroundColor Red
+        return
+    }
+    
+    Write-Host ""
+    Write-Color "  [>] Pulling model: $ModelName" -ForegroundColor Cyan
+    
+    # 配置代理
+    if ($IsChina) {
+        $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
+        $env:HTTP_PROXY = "http://mirror.ghproxy.com"
+        Write-Color "  [INFO] Using mirror: mirror.ghproxy.com" -ForegroundColor Cyan
+    }
+    
+    $exePath = "$env:ProgramFiles\Ollama\ollama.exe"
+    if (-not (Test-Path $exePath)) {
+        Write-Color "  [x] Ollama not installed" -ForegroundColor Red
+        return
+    }
+    
+    # 执行下载
+    Write-Color "  [>] Downloading..." -ForegroundColor Cyan
+    
+    $process = Start-Process -FilePath $exePath -ArgumentList "pull", $ModelName -PassThru -WindowStyle Hidden
+    
+    # 等待进程完成
+    while (-not $process.HasExited) {
+        Start-Sleep -Milliseconds 500
+        Write-Host "." -NoNewline -ForegroundColor Gray
+    }
+    
+    Write-Host ""
+    if ($process.ExitCode -eq 0) {
+        Write-Color "  [OK] Model downloaded successfully!" -ForegroundColor Green
+    } else {
+        Write-Color "  [x] Download failed (code: $($process.ExitCode))" -ForegroundColor Red
+    }
 }
 
 function Open-WebInterface {
@@ -298,9 +348,15 @@ function Open-WebInterface {
 # ==================== 主程序 ====================
 $scriptParams = $MyInvocation.MyCommand.Parameters
 
-if ($scriptParams["Install"] -or $scriptParams["Start"] -or $scriptParams["Stop"] -or $scriptParams["Status"] -or $scriptParams["Models"] -or $scriptParams["Web"]) {
+if ($scriptParams["Install"] -or $scriptParams["Start"] -or $scriptParams["Stop"] -or $scriptParams["Status"] -or $scriptParams["Models"] -or $scriptParams["Web"] -or $scriptParams["Pull"]) {
     # 命令行模式
     $isChina = Test-NetworkChina
+    
+    # 配置模型镜像
+    if ($isChina) {
+        $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
+        $env:HTTP_PROXY = "http://mirror.ghproxy.com"
+    }
     
     if ($scriptParams["Install"]) {
         Install-Ollama -IsChina $isChina
@@ -315,14 +371,25 @@ if ($scriptParams["Install"] -or $scriptParams["Start"] -or $scriptParams["Stop"
         Show-Status
     }
     if ($scriptParams["Models"]) {
-        Show-RecommendedModels
+        Show-RecommendedModels -IsChina $isChina
     }
     if ($scriptParams["Web"]) {
         Open-WebInterface
     }
+    if ($scriptParams["Pull"]) {
+        Download-Model -ModelName $scriptParams["Pull"].Value -IsChina $isChina
+    }
 } else {
     # 交互模式
     $isChina = Test-NetworkChina
+    
+    # 配置模型镜像
+    if ($isChina) {
+        $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
+        $env:HTTP_PROXY = "http://mirror.ghproxy.com"
+        Write-Color "  [INFO] Model mirror enabled" -ForegroundColor Cyan
+    }
+    
     $running = $true
     
     while ($running) {
@@ -341,7 +408,7 @@ if ($scriptParams["Install"] -or $scriptParams["Start"] -or $scriptParams["Stop"
             "2" { Start-Service; Write-Host ""; Write-Color "  Press any key to continue..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
             "3" { Stop-Service; Write-Host ""; Write-Color "  Press any key to continue..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
             "4" { Show-Status; Write-Host ""; Write-Color "  Press any key to continue..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
-            "5" { Show-RecommendedModels; Write-Host ""; Write-Color "  Press any key to continue..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
+            "5" { Show-RecommendedModels -IsChina $isChina; Write-Host ""; Write-Color "  Press any key to continue..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
             "6" { Open-WebInterface; Write-Host ""; Write-Color "  Press any key to continue..." -ForegroundColor Gray; $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") }
             "0" { $running = $false }
             default { Write-Host ""; Write-Color "  Invalid option, please try again" -ForegroundColor Red; Start-Sleep -Seconds 1 }
