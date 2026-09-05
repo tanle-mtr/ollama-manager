@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ollamaDelete: (modelName) => ipcRenderer.invoke('ollama:delete', modelName),
   ollamaList: () => ipcRenderer.invoke('ollama:list'),
   
+  // 代理 API
+  proxyStart: () => ipcRenderer.invoke('proxy:start'),
+  proxyStop: () => ipcRenderer.invoke('proxy:stop'),
+  proxyStatus: () => ipcRenderer.invoke('proxy:status'),
+  
   // 事件监听
   onProgress: (callback) => {
     ipcRenderer.on('ollama:progress', (event, data) => callback(data));

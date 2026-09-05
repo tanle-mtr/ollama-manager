@@ -7,6 +7,36 @@ const fs = require('fs');
 let mainWindow;
 let ollamaProcess = null;
 let webServerProcess = null;
+let proxyProcess = null;
+
+// 启动 Ollama 代理服务器（国内镜像）
+async function startOllamaProxy() {
+  const proxyScript = path.join(__dirname, 'ollama-proxy.js');
+  
+  if (!fs.existsSync(proxyScript)) {
+    return { success: false, error: 'Proxy script not found' };
+  }
+  
+  try {
+    proxyProcess = spawn('node', [proxyScript], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    });
+    
+    proxyProcess.unref();
+    
+    // 等待代理启动
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // 设置环境变量
+    process.env.OLLAMA_HOST = 'http://localhost:18080';
+    
+    return { success: true, message: 'Ollama proxy started on port 18080' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -42,7 +72,10 @@ function createWindow() {
 }
 
 // 应用准备就绪
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // 启动代理（国内用户）
+  await startOllamaProxy();
+  
   createWindow();
 
   app.on('activate', () => {
@@ -84,7 +117,25 @@ ipcMain.handle('ollama:status', async () => {
   }
 });
 
-ipcMain.handle('ollama:start', async () => {
+ipcMain.handle('proxy:start', async () => {
+  return await startOllamaProxy();
+});
+
+ipcMain.handle('proxy:stop', async () => {
+  if (proxyProcess) {
+    proxyProcess.kill();
+    proxyProcess = null;
+  }
+  process.env.OLLAMA_HOST = undefined;
+  return { success: true };
+});
+
+ipcMain.handle('proxy:status', async () => {
+  return {
+    running: proxyProcess !== null,
+    host: process.env.OLLAMA_HOST || 'http://localhost:18080'
+  };
+});
   const ollamaPath = path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Ollama', 'ollama.exe');
   
   if (!fs.existsSync(ollamaPath)) {

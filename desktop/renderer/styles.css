@@ -159,6 +159,27 @@ body {
   color: var(--text-secondary);
 }
 
+.proxy-status {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.proxy-status.active {
+  color: var(--success);
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.proxy-status i {
+  font-size: 10px;
+}
+
 .status-dot {
   width: 8px;
   height: 8px;

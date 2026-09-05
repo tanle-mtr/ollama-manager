@@ -12,8 +12,27 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
   await loadSystemInfo();
   await refreshStatus();
+  await setupProxy();
   setupNavigation();
   loadPopularModels();
+}
+
+// 设置代理
+async function setupProxy() {
+  const proxyStatus = await window.electronAPI.proxyStatus();
+  const proxyIndicator = document.getElementById('proxy-status');
+  
+  if (proxyStatus.running) {
+    if (proxyIndicator) {
+      proxyIndicator.innerHTML = '<i class="fas fa-server"></i> Proxy: ON';
+      proxyIndicator.className = 'proxy-status active';
+    }
+  } else {
+    if (proxyIndicator) {
+      proxyIndicator.innerHTML = '<i class="fas fa-server"></i> Proxy: OFF';
+      proxyIndicator.className = 'proxy-status';
+    }
+  }
 }
 
 // 导航
