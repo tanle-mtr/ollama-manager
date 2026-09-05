@@ -93,7 +93,7 @@ app.post('/api/models/pull', async (req, res) => {
 
     // 检测网络环境并配置镜像
     const isChina = await isChinaUser();
-    const proxyUrl = isChina ? 'http://mirror.ghproxy.com' : '';
+    const proxyUrl = isChina ? 'http://modelscope.cn' : '';
     
     // 构建环境变量，设置代理
     const env = {

@@ -99,7 +99,7 @@ function Install-Ollama {
     Write-Color "  [OK] Latest version: v$version" -ForegroundColor Green
     
     $arch = if ([Environment]::Is64BitOperatingSystem) { "windows-amd64" } else { "windows-386" }
-    $mirror = if ($IsChina) { "https://mirror.ghproxy.com/" } else { "" }
+    $mirror = if ($IsChina) { "https://modelscope.cn/" } else { "" }
     $url = "${mirror}https://github.com/ollama/ollama/releases/download/v$version/ollama-$arch.exe"
     
     $tempDir = Join-Path $env:TEMP "ollama-setup-$version"
@@ -222,9 +222,9 @@ function Show-RecommendedModels {
     Write-Host "  +--------------------------------------------------+" -ForegroundColor Cyan
     Write-Host ""
     
-    # 显示镜像状态
+    # Show mirror status
     if ($IsChina) {
-        Write-Color "  Mirror: Enabled (mirror.ghproxy.com)" -ForegroundColor Green
+        Write-Color "  Mirror: Enabled (ModelScope 魔塔社区)" -ForegroundColor Green
         Write-Host ""
     }
     
@@ -247,10 +247,10 @@ function Show-RecommendedModels {
     Write-Host ""
     
     foreach ($m in $suitable) {
-        $tagColor = if ($m.Tags -like "*Chinese*") { "Green" } 
-                    elseif ($m.Tags -like "*Latest*") { "Cyan" }
-                    elseif ($m.Tags -like "*Code*") { "Magenta" }
-                    else { "White" }
+        $tagColor = "White"
+        if ($m.Tags -like "*Chinese*") { $tagColor = "Green" }
+        elseif ($m.Tags -like "*Latest*") { $tagColor = "Cyan" }
+        elseif ($m.Tags -like "*Code*") { $tagColor = "Magenta" }
         
         Write-Color "  * $($m.Name.PadRight(20))" -ForegroundColor White -NoNewline
         Write-Color "  [$($m.Size.PadRight(6))]" -ForegroundColor Gray -NoNewline
@@ -275,9 +275,9 @@ function Download-Model {
     
     # 配置代理
     if ($IsChina) {
-        $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
-        $env:HTTP_PROXY = "http://mirror.ghproxy.com"
-        Write-Color "  [INFO] Using mirror: mirror.ghproxy.com" -ForegroundColor Cyan
+        $env:HTTPS_PROXY = "https://modelscope.cn"
+        $env:HTTP_PROXY = "https://modelscope.cn"
+        Write-Color "  [INFO] Using mirror: ModelScope 魔塔社区" -ForegroundColor Cyan
     }
     
     $exePath = "$env:ProgramFiles\Ollama\ollama.exe"
@@ -354,8 +354,8 @@ if ($scriptParams["Install"] -or $scriptParams["Start"] -or $scriptParams["Stop"
     
     # 配置模型镜像
     if ($isChina) {
-        $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
-        $env:HTTP_PROXY = "http://mirror.ghproxy.com"
+        $env:HTTPS_PROXY = "https://modelscope.cn"
+        $env:HTTP_PROXY = "https://modelscope.cn"
     }
     
     if ($scriptParams["Install"]) {
@@ -385,9 +385,9 @@ if ($scriptParams["Install"] -or $scriptParams["Start"] -or $scriptParams["Stop"
     
     # 配置模型镜像
     if ($isChina) {
-        $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
-        $env:HTTP_PROXY = "http://mirror.ghproxy.com"
-        Write-Color "  [INFO] Model mirror enabled" -ForegroundColor Cyan
+        $env:HTTPS_PROXY = "https://modelscope.cn"
+        $env:HTTP_PROXY = "https://modelscope.cn"
+        Write-Color "  [INFO] Model mirror enabled (ModelScope)" -ForegroundColor Cyan
     }
     
     $running = $true

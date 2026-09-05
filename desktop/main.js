@@ -140,8 +140,8 @@ ipcMain.handle('ollama:pull', async (event, modelName) => {
     const child = spawn(ollamaPath, ['pull', modelName], {
       env: {
         ...process.env,
-        HTTPS_PROXY: 'http://mirror.ghproxy.com',
-        HTTP_PROXY: 'http://mirror.ghproxy.com'
+        HTTPS_PROXY: 'https://modelscope.cn',
+        HTTP_PROXY: 'https://modelscope.cn'
       }
     });
 

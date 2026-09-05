@@ -81,7 +81,7 @@ if (Test-Path $ollamaPath) {
     
     # Download
     $arch = if ([Environment]::Is64BitOperatingSystem) { "windows-amd64" } else { "windows-386" }
-    $mirror = if ($isChina) { "https://mirror.ghproxy.com/" } else { "" }
+    $mirror = if ($isChina) { "https://modelscope.cn/models" } else { "" }
     $url = "${mirror}https://github.com/ollama/ollama/releases/download/v$ver/ollama-$arch.exe"
     $temp = Join-Path $env:TEMP "ollama-setup-$ver.exe"
     
@@ -115,9 +115,9 @@ Write-Step 4 5 "Starting services..."
 # Configure model mirrors for China users
 if ($isChina) {
     Write-Info "Configuring model download mirrors..."
-    $env:HTTPS_PROXY = "http://mirror.ghproxy.com"
-    $env:HTTP_PROXY = "http://mirror.ghproxy.com"
-    Write-OK "Model mirror enabled (mirror.ghproxy.com)"
+    $env:HTTPS_PROXY = "https://modelscope.cn"
+    $env:HTTP_PROXY = "https://modelscope.cn"
+    Write-OK "Model mirror enabled (ModelScope 魔塔社区)"
 }
 
 # Start Ollama
