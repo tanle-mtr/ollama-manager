@@ -1,0 +1,20 @@
+{
+  "name": "ollama-manager-desktop",
+  "version": "1.0.0",
+  "description": "Ollama Manager Desktop - Modern AI Model Manager",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": ["ollama", "ai", "llm", "desktop", "electron"],
+  "author": "Sapiens AI",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

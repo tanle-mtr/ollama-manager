@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama Manager</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <!-- 顶部标题栏 -->
+  <div class="titlebar">
+    <div class="titlebar-drag">
+      <div class="app-logo">
+        <i class="fas fa-robot"></i>
+        <span>Ollama Manager</span>
+      </div>
+      <div class="app-subtitle">Powered by Sapiens AI</div>
+    </div>
+    <div class="titlebar-controls">
+      <button class="control-btn minimize" onclick="window.electronAPI.minimize()">
+        <i class="fas fa-minus"></i>
+      </button>
+      <button class="control-btn maximize" onclick="window.electronAPI.maximize()">
+        <i class="fas fa-square"></i>
+      </button>
+      <button class="control-btn close" onclick="window.electronAPI.close()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span>仪表板</span>
+        </a>
+        <a href="#" class="nav-item" data-page="models">
+          <i class="fas fa-cube"></i>
+          <span>模型管理</span>
+        </a>
+        <a href="#" class="nav-item" data-page="download">
+          <i class="fas fa-download"></i>
+          <span>下载模型</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings">
+          <i class="fas fa-cog"></i>
+          <span>设置</span>
+        </a>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator" id="ollamaStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">检查中...</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 仪表板页面 -->
+      <div class="page active" id="page-dashboard">
+        <header class="page-header">
+          <h1>仪表板</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary" onclick="refreshStatus()">
+              <i class="fas fa-sync-alt"></i>
+              刷新
+            </button>
+          </div>
+        </header>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-models">0</span>
+              <span class="stat-label">已安装模型</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-hdd"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-size">0 GB</span>
+              <span class="stat-label">总占用空间</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-memory"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-ram">-</span>
+              <span class="stat-label">系统内存</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-server"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-status">-</span>
+              <span class="stat-label">服务状态</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-bolt"></i> 快速操作</h3>
+            </div>
+            <div class="card-body">
+              <div class="quick-actions">
+                <button class="action-btn" onclick="startOllama()">
+                  <i class="fas fa-play"></i>
+                  <span>启动 Ollama</span>
+                </button>
+                <button class="action-btn" onclick="stopOllama()">
+                  <i class="fas fa-stop"></i>
+                  <span>停止 Ollama</span>
+                </button>
+                <button class="action-btn" onclick="openWebUI()">
+                  <i class="fas fa-external-link-alt"></i>
+                  <span>打开 Web UI</span>
+                </button>
+                <button class="action-btn" onclick="showPage('download')">
+                  <i class="fas fa-download"></i>
+                  <span>下载模型</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-star"></i> 推荐模型</h3>
+            </div>
+            <div class="card-body">
+              <div class="model-list" id="recommended-models">
+                <div class="loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>加载中...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card full-width">
+            <div class="card-header">
+              <h3><i class="fas fa-info-circle"></i> 系统信息</h3>
+            </div>
+            <div class="card-body">
+              <div class="system-info">
+                <div class="info-row">
+                  <span class="info-label">平台</span>
+                  <span class="info-value" id="info-platform">-</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">架构</span>
+                  <span class="info-value" id="info-arch">-</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">CPU 核心</span>
+                  <span class="info-value" id="info-cpus">-</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">网络环境</span>
+                  <span class="info-value" id="info-network">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模型管理页面 -->
+      <div class="page" id="page-models">
+        <header class="page-header">
+          <h1>模型管理</h1>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="loadModels()">
+              <i class="fas fa-sync"></i>
+              刷新列表
+            </button>
+          </div>
+        </header>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>已安装模型</h3>
+            <span class="model-count" id="model-count">0 个模型</span>
+          </div>
+          <div class="card-body">
+            <div class="model-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>模型名称</th>
+                    <th>大小</th>
+                    <th>修改时间</th>
+                    <th>参数规模</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="models-table-body">
+                  <tr>
+                    <td colspan="5" class="empty-state">
+                      <i class="fas fa-inbox"></i>
+                      <span>暂无模型，去下载页面获取</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下载模型页面 -->
+      <div class="page" id="page-download">
+        <header class="page-header">
+          <h1>下载模型</h1>
+        </header>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-plus-circle"></i> 下载新模型</h3>
+          </div>
+          <div class="card-body">
+            <div class="download-form">
+              <div class="input-group">
+                <input type="text" id="model-input" class="input" placeholder="输入模型名称，如: llama3.2:3b, qwen2.5:7b">
+                <button class="btn btn-primary" onclick="downloadModel()">
+                  <i class="fas fa-download"></i>
+                  下载
+                </button>
+              </div>
+              <p class="hint">示例: phi3, llama3.2:3b, qwen2.5:7b, deepseek-coder:6.7b</p>
+            </div>
+            
+            <div id="download-progress" class="progress-section" style="display: none;">
+              <div class="progress-header">
+                <span class="progress-model" id="progress-model">-</span>
+                <span class="progress-percent" id="progress-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+              <div class="progress-details">
+                <span id="progress-speed">0 MB/s</span>
+                <span id="progress-size">0 / 0 MB</span>
+              </div>
+            </div>
+
+            <div id="download-log" class="log-section" style="display: none;">
+              <div class="log-header">
+                <span>下载日志</span>
+                <button class="btn btn-small" onclick="clearLog()">清空</button>
+              </div>
+              <div class="log-content" id="log-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-lightbulb"></i> 热门模型推荐</h3>
+          </div>
+          <div class="card-body">
+            <div class="model-grid" id="popular-models">
+              <!-- 动态生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设置页面 -->
+      <div class="page" id="page-settings">
+        <header class="page-header">
+          <h1>设置</h1>
+        </header>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-server"></i> Ollama 服务</h3>
+          </div>
+          <div class="card-body">
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">自动启动</span>
+                <span class="setting-desc">开机时自动启动 Ollama 服务</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="auto-start" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-name">镜像加速</span>
+                <span class="setting-desc">使用镜像加速模型下载（国内用户推荐）</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="mirror-enable" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-info-circle"></i> 关于</h3>
+          </div>
+          <div class="card-body">
+            <div class="about-info">
+              <div class="about-logo">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="about-details">
+                <h2>Ollama Manager Desktop</h2>
+                <p>版本: 1.0.0</p>
+                <p>Powered by Sapiens AI</p>
+              </div>
+            </div>
+            <div class="about-links">
+              <a href="https://github.com/tanle-mtr/ollama-manager" target="_blank" class="btn btn-secondary">
+                <i class="fab fa-github"></i>
+                GitHub 仓库
+              </a>
+              <a href="https://ollama.ai" target="_blank" class="btn btn-secondary">
+                <i class="fas fa-external-link-alt"></i>
+                Ollama 官网
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="main.js"></script>
+</body>
+</html>
