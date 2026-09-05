@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Manager Icon Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+        h1 {
+            margin-bottom: 40px;
+            font-size: 24px;
+            background: linear-gradient(135deg, #58a6ff, #a371f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .preview-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .icon-wrapper {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-wrapper.light {
+            background: #f6f8fa;
+            border-color: #d0d7de;
+        }
+        img {
+            display: block;
+        }
+        .size-label {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        .features {
+            max-width: 600px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .features h3 {
+            margin-bottom: 16px;
+            color: #58a6ff;
+        }
+        .features ul {
+            list-style: none;
+            text-align: left;
+        }
+        .features li {
+            padding: 8px 0;
+            color: #8b949e;
+        }
+        .features li:before {
+            content: "✓ ";
+            color: #3fb950;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Ollama Manager Icon</h1>
+    
+    <div class="preview-container">
+        <div class="icon-item">
+            <div class="icon-wrapper">
+                <img src="icon.svg" width="256" height="256" alt="Icon 256x256">
+            </div>
+            <span class="size-label">256 × 256</span>
+        </div>
+        <div class="icon-item">
+            <div class="icon-wrapper">
+                <img src="icon.svg" width="128" height="128" alt="Icon 128x128">
+            </div>
+            <span class="size-label">128 × 128</span>
+        </div>
+        <div class="icon-item">
+            <div class="icon-wrapper">
+                <img src="icon.svg" width="64" height="64" alt="Icon 64x64">
+            </div>
+            <span class="size-label">64 × 64</span>
+        </div>
+        <div class="icon-item">
+            <div class="icon-wrapper light">
+                <img src="icon.svg" width="128" height="128" alt="Light Background">
+            </div>
+            <span class="size-label">浅色背景预览</span>
+        </div>
+    </div>
+    
+    <div class="features">
+        <h3>设计特点</h3>
+        <ul>
+            <li>深色主题配色，与 Codex++ 风格一致</li>
+            <li>蓝色到紫色的渐变光环，现代感强</li>
+            <li>简洁的机器人形象，易于识别</li>
+            <li>发光眼睛效果，科技感十足</li>
+            <li>矢量 SVG 格式，无损缩放</li>
+            <li>支持多种尺寸导出</li>
+        </ul>
+    </div>
+</body>
+</html>
