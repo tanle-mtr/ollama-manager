@@ -26,9 +26,6 @@ async function startOllamaProxy() {
     
     proxyProcess.unref();
     
-    // 等待代理启动
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     // 设置环境变量
     process.env.OLLAMA_HOST = 'http://localhost:18080';
     
@@ -117,25 +114,7 @@ ipcMain.handle('ollama:status', async () => {
   }
 });
 
-ipcMain.handle('proxy:start', async () => {
-  return await startOllamaProxy();
-});
-
-ipcMain.handle('proxy:stop', async () => {
-  if (proxyProcess) {
-    proxyProcess.kill();
-    proxyProcess = null;
-  }
-  process.env.OLLAMA_HOST = undefined;
-  return { success: true };
-});
-
-ipcMain.handle('proxy:status', async () => {
-  return {
-    running: proxyProcess !== null,
-    host: process.env.OLLAMA_HOST || 'http://localhost:18080'
-  };
-});
+ipcMain.handle('ollama:start', async () => {
   const ollamaPath = path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Ollama', 'ollama.exe');
   
   if (!fs.existsSync(ollamaPath)) {
@@ -153,9 +132,6 @@ ipcMain.handle('proxy:status', async () => {
     });
     
     ollamaProcess.unref();
-    
-    // 等待服务启动
-    await new Promise(resolve => setTimeout(resolve, 2000));
     
     return { success: true, message: 'Ollama started successfully' };
   } catch (error) {
@@ -275,6 +251,27 @@ ipcMain.handle('ollama:list', async () => {
   } catch (error) {
     return [];
   }
+});
+
+// 代理管理
+ipcMain.handle('proxy:start', async () => {
+  return await startOllamaProxy();
+});
+
+ipcMain.handle('proxy:stop', async () => {
+  if (proxyProcess) {
+    proxyProcess.kill();
+    proxyProcess = null;
+  }
+  process.env.OLLAMA_HOST = undefined;
+  return { success: true };
+});
+
+ipcMain.handle('proxy:status', async () => {
+  return {
+    running: proxyProcess !== null,
+    host: process.env.OLLAMA_HOST || 'http://localhost:18080'
+  };
 });
 
 // Web 服务器管理
